@@ -41,6 +41,7 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models
 		&user.Id,
 		&user.Email,
 		&user.Name,
+		&user.PasswordHash,
 		&user.AuthProvider,
 		&user.AvatarUrl,
 		&user.CreatedAt,
