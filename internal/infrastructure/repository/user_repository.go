@@ -38,13 +38,15 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models
 
 	var user models.User
 	err = r.db.QueryRowContext(ctx, query, args...).Scan(
-		&user.Id,
+		 &user.ID, 
+		&user.PublicID,
 		&user.Email,
 		&user.Name,
 		&user.PasswordHash,
 		&user.AuthProvider,
-		&user.AvatarUrl,
+		&user.AvatarURL,
 		&user.CreatedAt,
+		&user.UpdatedAt,
 	)
 
 	if err != nil {
@@ -61,7 +63,7 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
     query, args, err := r.sq.
         Insert("users").
         Columns("id", "email", "name", "password_hash", "auth_provider", "avatar_url").
-        Values(user.Id, user.Email, user.Name, user.PasswordHash, user.AuthProvider, user.AvatarUrl).
+        Values(user.ID, user.Email, user.Name, user.PasswordHash, user.AuthProvider, user.AvatarURL).
         Suffix("RETURNING created_at").
         ToSql()
 

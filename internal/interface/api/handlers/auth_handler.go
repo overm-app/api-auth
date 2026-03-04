@@ -7,20 +7,21 @@ import (
 	appErrors "github.com/overm-app/api-auth/internal/domain/errors"
 	"github.com/overm-app/api-auth/internal/domain/models"
 	"github.com/overm-app/api-auth/internal/usecase"
+	"github.com/overm-app/api-auth/internal/interface/api/response"
 )
 
-type AuthHandler struct{
+type AuthHandler struct {
 	loginUseCase *usecase.LoginUseCase
 	cookieConfig CookieConfig
-	sugar		*zap.SugaredLogger
+	sugar        *zap.SugaredLogger
 }
 
 func NewAuthHandler(loginUseCase *usecase.LoginUseCase, cookieConfig CookieConfig, sugar *zap.SugaredLogger) *AuthHandler {
-    return &AuthHandler{
-        loginUseCase:    loginUseCase,
-        cookieConfig:    cookieConfig,
-        sugar:           sugar,
-    }
+	return &AuthHandler{
+		loginUseCase: loginUseCase,
+		cookieConfig: cookieConfig,
+		sugar:        sugar,
+	}
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -28,13 +29,13 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	var req models.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		HandleError(c, h.sugar, appErrors.Validation(appErrors.ErrValidation, err.Error()), requestID)
+		response.HandleError(c, h.sugar, appErrors.Validation(appErrors.ErrValidation, err.Error()), requestID)
 		return
 	}
 
 	resp, err := (*h.loginUseCase).Execute(c.Request.Context(), &req)
 	if err != nil {
-		HandleError(c, h.sugar, err, requestID)
+		response.HandleError(c, h.sugar, err, requestID)
 		return
 	}
 
@@ -44,6 +45,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		c.JSON(200, models.WebAuthResponse{User: resp.User})
 		return
 	}
-	
+
 	c.JSON(200, resp)
 }

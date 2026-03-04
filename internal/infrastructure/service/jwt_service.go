@@ -4,35 +4,28 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"go.uber.org/zap"
 
-	"github.com/overm-app/api-auth/internal/domain/models"  
-    appErrors "github.com/overm-app/api-auth/internal/domain/errors"
+	appErrors "github.com/overm-app/api-auth/internal/domain/errors"
+	"github.com/overm-app/api-auth/internal/domain/models"
+	"github.com/overm-app/api-auth/internal/domain/ports"
 )
-
-type JWTServiceInter interface {
-	GenerateToken(user *models.User) (string, error)
-	ValidateToken(tokenString string) (*models.JWTClaims, error)
-}
 
 type JWTService struct {
 	secret     []byte
 	expiration time.Duration
-	sugar      *zap.SugaredLogger
 }
 
-func NewJWTService(secret []byte, expiration time.Duration, sugar *zap.SugaredLogger) JWTServiceInter {
+func NewJWTService(secret []byte, expiration time.Duration) ports.JWTService {
 	return &JWTService{
 		secret:     secret,
 		expiration: expiration,
-		sugar:      sugar,
 	}
 }
 
 func (j *JWTService) GenerateToken(user *models.User) (string, error) {
 	claims := &models.JWTClaims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   user.Id,
+			Subject:   user.PublicID,
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.expiration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 			Issuer:    "overm-api-auth",

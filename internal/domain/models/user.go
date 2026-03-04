@@ -1,11 +1,15 @@
 package models
 
+import "time"
+
 type User struct {
-	Id 	 			string `json:"id"`
-	Email 			string `json:"email"`
-	Name 			string `json:"name"`
-	PasswordHash 	string `json:"-"`
-	AuthProvider 	string `json:"auth_provider"`
-	AvatarUrl 		string `json:"avatar_url"`
-	CreatedAt 		string `json:"created_at"`
+    ID           int64     `json:"-"`          
+    PublicID     string    `json:"id"`
+    Email        string    `json:"email"`
+    Name         string    `json:"name"`
+    PasswordHash string    `json:"-"`
+    AuthProvider string    `json:"auth_provider"`
+    AvatarURL    *string   `json:"avatar_url"`
+    CreatedAt    time.Time `json:"created_at"`
+    UpdatedAt    time.Time `json:"updated_at"`
 }

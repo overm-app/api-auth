@@ -32,8 +32,8 @@ func NewCookieConfig() CookieConfig {
 
 func (cfg CookieConfig) setAuthCookies(c *gin.Context, resp *models.AuthResponse) {
     c.SetCookie(accessTokenCookie, resp.AccessToken, accessTokenMaxAge, "/", cfg.Domain, cfg.Secure, true)
-    c.SetCookie(refreshTokenCookie, resp.RefreshToken, refreshTokenMaxAge, "/auth/v1/refresh", cfg.Domain, cfg.Secure, true)
-    c.SetCookie(csrfTokenCookie, resp.CSRFToken, csrfTokenMaxAge, "/", cfg.Domain, cfg.Secure, false)
+    c.SetCookie(refreshTokenCookie, resp.RefreshToken, refreshTokenMaxAge, "/auth/v1/refresh", "", cfg.Secure, true)
+    c.SetCookie(csrfTokenCookie, resp.CSRFToken, csrfTokenMaxAge, "/", "", cfg.Secure, false)
 }
 
 // func (cfg CookieConfig) clearAuthCookies(c *gin.Context) {

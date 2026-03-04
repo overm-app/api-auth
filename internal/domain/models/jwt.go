@@ -14,7 +14,7 @@ type JWTClaims struct {
 
 type RefreshToken struct {
 	ID        string
-	UserID    string
+	UserID    int64
 	Token     string
 	ExpiresAt time.Time
 	CreatedAt time.Time

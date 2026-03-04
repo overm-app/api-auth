@@ -1,5 +1,4 @@
-package handlers
-
+package response
 import (
 	"errors"
 
