@@ -1,7 +1,7 @@
 package errors
 
 type AppError struct {
-	Code	string
+	Code	ErrorCode
 	Message string
 	HTTPStatus int
 	Err 	 error
@@ -15,7 +15,7 @@ func (e *AppError) Unwrap() error {
 	return e.Err
 }
 
-func NotFound(code, message string) *AppError {
+func NotFound(code ErrorCode, message string) *AppError {
 	return &AppError{
 		Code: code,
 		Message: message,
@@ -23,7 +23,7 @@ func NotFound(code, message string) *AppError {
 	}
 }
 
-func Unauthorized(code, message string) *AppError {
+func Unauthorized(code ErrorCode, message string) *AppError {
 	return &AppError{
 		Code: code,
 		Message: message,
@@ -31,7 +31,7 @@ func Unauthorized(code, message string) *AppError {
 	}
 }
 
-func Conflict(code, message string) *AppError {
+func Conflict(code ErrorCode, message string) *AppError {
 	return &AppError{
 		Code: code,
 		Message: message,
@@ -39,7 +39,7 @@ func Conflict(code, message string) *AppError {
 	}
 }
 
-func Validation(code, message string) *AppError {
+func Validation(code ErrorCode, message string) *AppError {
 	return &AppError{
 		Code: code,
 		Message: message,
@@ -49,7 +49,7 @@ func Validation(code, message string) *AppError {
 
 func Internal(message string, err error) *AppError {
 	return &AppError{
-		Code: "INTERNAL_ERROR",
+		Code: ErrInternal,
 		Message: message,
 		Err: err,
 		HTTPStatus: 500,
