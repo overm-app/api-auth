@@ -26,3 +26,8 @@ type WebAuthResponse struct {
 	User User `json:"user"`
 }
 
+const (
+	AuthProviderLocal = "local"
+	AuthProviderGoogle = "google"
+)
+

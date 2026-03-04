@@ -10,6 +10,7 @@ import (
 	appErrors "github.com/overm-app/api-auth/internal/domain/errors"
 )
 
+
 func GenerateRefreshToken() (token string, id string, err error) {
 	b := make([]byte, 32)
 	if _, err := rand.Read(b); err != nil {
