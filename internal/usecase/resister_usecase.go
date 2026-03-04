@@ -12,7 +12,7 @@ import (
 	"github.com/overm-app/api-auth/internal/infrastructure/service"
 )
 
-const cost = 14
+const cost = bcrypt.DefaultCost
 
 type RegisterUseCase struct {
 	userRepo   ports.UserRepository
@@ -42,7 +42,7 @@ func (uc *RegisterUseCase) Execute(ctx context.Context, req *models.RegisterRequ
 
 	hashedPassword, err := hashPassword(req.Password)
 	if err != nil {
-		return nil, err
+		return nil, appErrors.Internal("Failed to hash password", err)
 	}
 
 	user := &models.User{
@@ -53,17 +53,17 @@ func (uc *RegisterUseCase) Execute(ctx context.Context, req *models.RegisterRequ
 	}
 
 	if err := uc.userRepo.Create(ctx, user); err != nil {
-		return nil, appErrors.Internal("Failed to create user", err)
+		return nil, appErrors.Internal("failed to create user", err)
 	}
 
 	accesstoken, err := uc.jwtService.GenerateToken(user)
 	if err != nil {
-		return nil, err
+		return nil, appErrors.Internal("failed to generate access token", err)
 	}
 
 	rawToken, tokenID, err := service.GenerateRefreshToken()
 	if err != nil {
-		return nil, err
+		return nil, appErrors.Internal("failed to generate refresh token", err)
 	}
 
 	refreshToken := &models.RefreshToken{
@@ -74,7 +74,7 @@ func (uc *RegisterUseCase) Execute(ctx context.Context, req *models.RegisterRequ
 	}
 
 	if err := uc.tokenRepo.Save(ctx, refreshToken); err != nil {
-		return nil, appErrors.Internal("Failed to save refresh token", err)
+		return nil, appErrors.Internal("failed to save refresh token", err)
 	}
 
 	return &models.AuthResponse{
@@ -87,7 +87,7 @@ func (uc *RegisterUseCase) Execute(ctx context.Context, req *models.RegisterRequ
 func hashPassword(password string) (string, error) {
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), cost)
 	if err != nil {
-		return "", appErrors.Internal("Failed to hash password", err)
+		return "", err
 	}
 	return string(hashed), nil
 }

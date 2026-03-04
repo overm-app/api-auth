@@ -1,11 +1,11 @@
 package service
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 
-	appErrors "github.com/overm-app/api-auth/internal/domain/errors"
 	"github.com/overm-app/api-auth/internal/domain/models"
 	"github.com/overm-app/api-auth/internal/domain/ports"
 )
@@ -37,7 +37,7 @@ func (j *JWTService) GenerateToken(user *models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signed, err := token.SignedString(j.secret)
 	if err != nil {
-		return "", appErrors.Internal("Failed to sign token", err)
+		return "", fmt.Errorf("Failed to sign JWT: %w", err)
 	}
 
 	return signed, nil
@@ -46,18 +46,18 @@ func (j *JWTService) GenerateToken(user *models.User) (string, error) {
 func (j *JWTService) ValidateToken(tokenString string) (*models.JWTClaims, error) {
 	parsed, err := jwt.ParseWithClaims(tokenString, &models.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, appErrors.Unauthorized(appErrors.ErrTokenInvalid, "Unexpected signing method")
+			return nil, fmt.Errorf("Unexpected signing method")
 		}
 		return j.secret, nil
 	})
 
 	if err != nil {
-		return nil, appErrors.Unauthorized(appErrors.ErrTokenInvalid, "Invalid or expired token")
+		return nil, fmt.Errorf("Failed to parse JWT: %w", err)
 	}
 
 	claims, ok := parsed.Claims.(*models.JWTClaims)
 	if !ok || !parsed.Valid {
-		return nil, appErrors.Unauthorized(appErrors.ErrTokenInvalid, "Invalid token claims")
+		return nil, fmt.Errorf("Invalid token claims")
 	}
 
 	return claims, nil
