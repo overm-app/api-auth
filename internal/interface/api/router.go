@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/overm-app/api-auth/internal/domain/ports"
@@ -30,6 +31,7 @@ func NewRouter(authHandler *handlers.AuthHandler, userHandler *handlers.UserHand
 func (r *Router) SetupRouter(logger *zap.SugaredLogger) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	ginEngine := gin.New()
+	ginEngine.Use(requestIDMiddleware())
 	ginEngine.Use(ginZapLogger(logger))
 	ginEngine.Use(gin.Recovery())
 
@@ -71,12 +73,15 @@ func ginZapLogger(sugar *zap.SugaredLogger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.Request.URL.Path
+		clientType := c.GetHeader("X-Client-Type")
 
 		c.Next()
 
 		fields := []any{
+			"request_id", c.GetString("request_id"),
 			"status", c.Writer.Status(),
 			"method", c.Request.Method,
+			"client_type", clientType,
 			"path", path,
 			"latency_ms", time.Since(start).Milliseconds(),
 			"ip", c.ClientIP(),
@@ -90,4 +95,19 @@ func ginZapLogger(sugar *zap.SugaredLogger) gin.HandlerFunc {
 
 		sugar.Infow("HTTP request", fields...)
 	}
+}
+
+func requestIDMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+		requestID := c.GetHeader("X-Request-ID")
+        if requestID == "" {
+            requestID = c.GetHeader("X-Amzn-Trace-Id")
+        }
+        if requestID == "" {
+            requestID = uuid.New().String()
+        }
+        c.Set("request_id", requestID)
+        c.Header("X-Request-ID", requestID)
+        c.Next()
+    }
 }
