@@ -43,7 +43,7 @@ func (r *TokenRepository) Save(ctx context.Context, token *models.RefreshToken) 
 	return nil
 }
 
-func (r *TokenRepository) GetByUserID(ctx context.Context, userID string) (*models.RefreshToken, error) {
+func (r *TokenRepository) GetByUserID(ctx context.Context, userID int64) (*models.RefreshToken, error) {
 	query, args, err := r.sq.
 		Select("id", "user_id", "token", "expires_at", "created_at").
 		From("refresh_tokens").
@@ -101,7 +101,7 @@ func (r *TokenRepository) GetByID(ctx context.Context, id string) (*models.Refre
 	return &token, nil
 }
 
-func (r *TokenRepository) DeleteByUserID(ctx context.Context, userID string) error {
+func (r *TokenRepository) DeleteByUserID(ctx context.Context, userID int64) error {
 	query, args, err := r.sq.
 		Delete("refresh_tokens").
 		Where(sq.Eq{"user_id": userID}).

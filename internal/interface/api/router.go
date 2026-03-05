@@ -13,13 +13,15 @@ import (
 
 type Router struct {
 	authHandler *handlers.AuthHandler
+	userHandler *handlers.UserHandler
 	jwtService  ports.JWTService
 	sugar       *zap.SugaredLogger
 }
 
-func NewRouter(authHandler *handlers.AuthHandler, jwtService ports.JWTService, sugar *zap.SugaredLogger) *Router {
+func NewRouter(authHandler *handlers.AuthHandler, userHandler *handlers.UserHandler, jwtService ports.JWTService, sugar *zap.SugaredLogger) *Router {
 	return &Router{
 		authHandler: authHandler,
+		userHandler: userHandler,
 		jwtService:  jwtService,
 		sugar:       sugar,
 	}
@@ -61,6 +63,7 @@ func (r *Router) setupRoutes(ginEngine *gin.Engine) {
 			})
 		})
 		auth.POST("/login", r.authHandler.Login)
+		auth.POST("/register", r.userHandler.Register)
 	}
 }
 

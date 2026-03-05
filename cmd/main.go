@@ -22,9 +22,11 @@ import (
 )
 
 func main() {
+	// Setup logger
 	sugar := setupLogger()
 	defer sugar.Sync()
 
+	// Load environment variables
 	if err := godotenv.Load(); err != nil {
 		sugar.Warnw("No .env file found, using environment variables or defaults")
 	}
@@ -35,14 +37,25 @@ func main() {
 		sugar.Warnw("SERVER_PORT not set, defaulting to 8081")
 	}
 
-	setupTimezone(sugar)
-
 	dbPort, err := strconv.Atoi(os.Getenv("DB_PORT"))
 	if err != nil {
 		sugar.Warnw("Invalid DB_PORT, defaulting to 5432", "error", err)
 		dbPort = 5432
 	}
 
+	jwtExpiration := 24 * time.Hour
+	if exp := os.Getenv("JWT_EXPIRATION_HOURS"); exp != "" {
+		if parsed, err := time.ParseDuration(exp + "h"); err == nil {
+			jwtExpiration = parsed
+		} else {
+			sugar.Warnw("Invalid JWT_EXPIRATION_HOURS, defaulting to 24h", "value", exp)
+		}
+	}
+
+	// Set server timezone
+	setupTimezone(sugar)
+
+	// Connect to database
 	dbCfg := db.Config{
 		Host:     os.Getenv("DB_HOST"),
 		Port:     dbPort,
@@ -59,6 +72,7 @@ func main() {
 	}
 	defer postgresDB.Close()
 
+	// Run migrations in non-production environments
 	databaseURL := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		dbCfg.User, dbCfg.Password, dbCfg.Host, strconv.Itoa(dbCfg.Port), dbCfg.DBName, dbCfg.SSLMode,
@@ -67,6 +81,7 @@ func main() {
     	runMigrations(databaseURL, sugar)
 	}
 
+	// Initialize repositories
 	userRepo := repository.NewUserRepository(postgresDB)
 	tokenRepo := repository.NewTokenRepository(postgresDB)
 
@@ -76,27 +91,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	jwtExpiration := 24 * time.Hour
-	if exp := os.Getenv("JWT_EXPIRATION_HOURS"); exp != "" {
-		if parsed, err := time.ParseDuration(exp + "h"); err == nil {
-			jwtExpiration = parsed
-		} else {
-			sugar.Warnw("Invalid JWT_EXPIRATION_HOURS, defaulting to 24h", "value", exp)
-		}
-	}
-
+	// Initialize services
 	jwtService := service.NewJWTService(jwtSecret, jwtExpiration)
 	
+	// Initialize use cases
 	loginUseCase := usecase.NewLoginUseCase(userRepo, tokenRepo, jwtService)
+	registerUseCase := usecase.NewRegisterUseCase(userRepo, tokenRepo, jwtService)
 
+	// Initialize API handlers
 	cookieCfg := handlers.NewCookieConfig()
-	authHandler := handlers.NewAuthHandler(
-		loginUseCase,
-		cookieCfg,
-		sugar,
-	)
+	authHandler := handlers.NewAuthHandler(loginUseCase,cookieCfg,sugar,)
+	userHandler := handlers.NewUserHandler(registerUseCase,cookieCfg,sugar,)
 
-	r := api.NewRouter(authHandler, jwtService, sugar)
+
+	// Setup and start server
+	r := api.NewRouter(authHandler, userHandler, jwtService, sugar)
 	engine := r.SetupRouter(sugar)
 
 	sugar.Infow("Starting server", "port", port)
@@ -151,6 +160,7 @@ func setupLogger() *zap.SugaredLogger {
 		ErrorOutputPaths: []string{"stderr"},
 	}.Build()
 
+	logger = logger.WithOptions(zap.WithCaller(true), zap.AddStacktrace(zapcore.FatalLevel))
 	sugar := logger.Sugar()
 	return sugar
 }

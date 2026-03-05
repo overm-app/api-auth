@@ -8,8 +8,8 @@ import (
 
 type TokenRepository interface {
 	Save(ctx context.Context, token *models.RefreshToken) error
-	GetByUserID(ctx context.Context, userID string) (*models.RefreshToken, error)
+	GetByUserID(ctx context.Context, userID int64) (*models.RefreshToken, error)
 	GetByID(ctx context.Context, id string) (*models.RefreshToken, error)
-	DeleteByUserID(ctx context.Context, userID string) error
+	DeleteByUserID(ctx context.Context, userID int64) error
 	RotateToken(ctx context.Context, oldID string, newToken *models.RefreshToken) error
 }

@@ -50,6 +50,10 @@ func (uc *LoginUseCase) Execute(ctx context.Context, req *models.LoginRequest) (
 		return nil, appErrors.Internal("Failed to generate refresh token", err)
 	}
 
+	if err := uc.tokenRepo.DeleteByUserID(ctx, user.ID); err != nil {
+		return nil, appErrors.Internal("Failed to delete existing refresh token", err)
+	}
+
 	refreshToken := &models.RefreshToken{
 		ID: tokenID,
 		UserID: user.ID,
