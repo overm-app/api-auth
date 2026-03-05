@@ -1,0 +1,22 @@
+services:
+  postgres:
+    container_name: postgresDB
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    networks:
+      - overm-network
+
+volumes:
+  postgres_data:
+
+networks:
+  overm-network:
+    external: true
