@@ -1,4 +1,5 @@
 package response
+
 import (
 	"errors"
 
@@ -17,6 +18,12 @@ func HandleError(c *gin.Context, sugar *zap.SugaredLogger, err error, requestID 
                 "request_id", requestID,
                 "code",       appErr.Code,
                 "cause",      appErr.Err.Error(),
+            )
+        } else {
+            sugar.Infow("Request rejected",
+                "request_id", requestID,
+                "code",       appErr.Code,
+                "message",    appErr.Message,
             )
         }
         c.AbortWithStatusJSON(appErr.HTTPStatus, gin.H{
