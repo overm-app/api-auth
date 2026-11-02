@@ -25,4 +25,5 @@ const (
 
     // Internal
     ErrInternal            ErrorCode = "INTERNAL_ERROR"
+    ERRUnavailable         ErrorCode = "SERVICE_UNAVAILABLE"
 )
