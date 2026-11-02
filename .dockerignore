@@ -1,0 +1,9 @@
+Makefile
+.gitignore
+.env
+README.md
+tmp/
+.air.toml
+migrations
+.github/
+Dockerfile
