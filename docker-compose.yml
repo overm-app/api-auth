@@ -14,6 +14,25 @@ services:
     networks:
       - overm-network
 
+  api-auth:
+    container_name: api-auth
+    image: api-auth:1.0.0
+    build:
+      context: .
+      dockerfile: Dockerfile
+      privileged: false
+    restart: unless-stopped
+    environment:
+      ENV: "develop"
+    env_file:
+      - .env_compose
+    ports:
+      - "${SERVER_PORT}:8081"
+    depends_on:
+      - postgres
+    networks:
+      - overm-network
+
 volumes:
   postgres_data:
 

@@ -15,3 +15,9 @@ migrate-version:
 
 migrate-create:
 	$(MIGRATE) create -ext sql -dir ./migrations -seq $(name)
+
+db-reset:
+	docker compose down -v postgres
+	docker compose up -d postgres
+	@sleep 5
+	$(MAKE) migrate-up
