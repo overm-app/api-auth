@@ -1,14 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 	"time"
 
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -26,9 +22,11 @@ func main() {
 	sugar := setupLogger()
 	defer sugar.Sync()
 
-	// Load environment variables
-	if err := godotenv.Load(); err != nil {
-		sugar.Warnw("No .env file found, using environment variables or defaults")
+	currentEnv := os.Getenv("ENV")
+	if currentEnv != "develop" && currentEnv != "QA" && currentEnv != "prod" {
+		if err := godotenv.Load(); err != nil {
+			sugar.Errorw("No .env file found, relying on system environment variables")
+		}
 	}
 
 	port := os.Getenv("SERVER_PORT")
@@ -72,15 +70,6 @@ func main() {
 	}
 	defer postgresDB.Close()
 
-	// Run migrations in non-production environments
-	databaseURL := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
-		dbCfg.User, dbCfg.Password, dbCfg.Host, strconv.Itoa(dbCfg.Port), dbCfg.DBName, dbCfg.SSLMode,
-	)
-	if os.Getenv("ENV") != "production" {
-    	runMigrations(databaseURL, sugar)
-	}
-
 	// Initialize repositories
 	userRepo := repository.NewUserRepository(postgresDB)
 	tokenRepo := repository.NewTokenRepository(postgresDB)
@@ -102,10 +91,11 @@ func main() {
 	cookieCfg := handlers.NewCookieConfig()
 	authHandler := handlers.NewAuthHandler(loginUseCase,cookieCfg,sugar,)
 	userHandler := handlers.NewUserHandler(registerUseCase,cookieCfg,sugar,)
+	healthHandler := handlers.NewHealthHandler(postgresDB, sugar)
 
 
 	// Setup and start server
-	r := api.NewRouter(authHandler, userHandler, jwtService, sugar)
+	r := api.NewRouter(authHandler, userHandler, healthHandler, jwtService, sugar)
 	engine := r.SetupRouter(sugar)
 
 	sugar.Infow("Starting server", "port", port)
@@ -117,22 +107,6 @@ func main() {
 		)
 		os.Exit(1)
 	}
-}
-
-func runMigrations(databaseURL string, sugar *zap.SugaredLogger) {
-    m, err := migrate.New("file://migrations", databaseURL)
-    if err != nil {
-        sugar.Errorw("Failed to create migrator", "error", err)
-        os.Exit(1)
-    }
-    defer m.Close()
-
-    if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-        sugar.Errorw("Failed to run migrations", "error", err)
-        os.Exit(1)
-    }
-
-    sugar.Infow("Migrations applied successfully")
 }
 
 func setupLogger() *zap.SugaredLogger {

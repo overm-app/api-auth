@@ -15,14 +15,16 @@ import (
 type Router struct {
 	authHandler *handlers.AuthHandler
 	userHandler *handlers.UserHandler
+	healthHandler *handlers.HealthHandler
 	jwtService  ports.JWTService
 	sugar       *zap.SugaredLogger
 }
 
-func NewRouter(authHandler *handlers.AuthHandler, userHandler *handlers.UserHandler, jwtService ports.JWTService, sugar *zap.SugaredLogger) *Router {
+func NewRouter(authHandler *handlers.AuthHandler, userHandler *handlers.UserHandler, healthHandler *handlers.HealthHandler, jwtService ports.JWTService, sugar *zap.SugaredLogger) *Router {
 	return &Router{
 		authHandler: authHandler,
 		userHandler: userHandler,
+		healthHandler: healthHandler,
 		jwtService:  jwtService,
 		sugar:       sugar,
 	}
@@ -36,7 +38,7 @@ func (r *Router) SetupRouter(logger *zap.SugaredLogger) *gin.Engine {
 	ginEngine.Use(gin.Recovery())
 
 	ginEngine.Use(cors.New(cors.Config{
-    AllowOrigins:     []string{"http://localhost:3000"}, // your frontend dev URL
+    AllowOrigins:     []string{"*"}, // your frontend dev URL
     AllowMethods:     []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
     AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Client-Type", "X-CSRF-Token"},
     ExposeHeaders:    []string{"Content-Length", "X-Request-ID"},
@@ -50,20 +52,11 @@ func (r *Router) SetupRouter(logger *zap.SugaredLogger) *gin.Engine {
 }
 
 func (r *Router) setupRoutes(ginEngine *gin.Engine) {
-	ginEngine.GET("/healthz", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status":  "ok",
-			"service": "api-auth",
-		})
-	})
+	ginEngine.GET("/health/livez", r.healthHandler.Live)
+	ginEngine.GET("/health/readyz", r.healthHandler.Ready)
 
 	auth := ginEngine.Group("/auth/v1")
 	{
-		auth.GET("/ping", func(c *gin.Context) {
-			c.JSON(200, gin.H{
-				"message": "pong",
-			})
-		})
 		auth.POST("/login", r.authHandler.Login)
 		auth.POST("/register", r.userHandler.Register)
 	}
@@ -71,6 +64,11 @@ func (r *Router) setupRoutes(ginEngine *gin.Engine) {
 
 func ginZapLogger(sugar *zap.SugaredLogger) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		switch c.Request.URL.Path {
+		case "/health/livez", "/health/readyz":
+			c.Next()
+			return
+		}
 		start := time.Now()
 		path := c.Request.URL.Path
 		clientType := c.GetHeader("X-Client-Type")

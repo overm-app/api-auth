@@ -10,9 +10,8 @@ import (
 )
 
 func HandleError(c *gin.Context, sugar *zap.SugaredLogger, err error, requestID string) {
-    var appErr *appErrors.AppError
 
-    if errors.As(err, &appErr) {
+    if appErr, ok := errors.AsType[*appErrors.AppError](err); ok {
         if appErr.Err != nil {
             sugar.Errorw("Request failed",
                 "request_id", requestID,
