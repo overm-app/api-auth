@@ -1,41 +1,50 @@
 services:
   postgres:
     container_name: postgresDB
-    image: postgres:18
-    restart: unless-stopped
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+    image: postgres:18
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USER}"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     ports:
       - "${DB_PORT}:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql
     networks:
       - overm-network
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    restart: unless-stopped
 
   api-auth:
-    container_name: api-auth
-    image: api-auth:1.0.0
     build:
       context: .
       dockerfile: Dockerfile
       privileged: false
-    restart: unless-stopped
-    environment:
-      ENV: "develop"
-    env_file:
-      - .env_compose
-    ports:
-      - "${SERVER_PORT}:8081"
+    container_name: api-auth
     depends_on:
       - postgres
+    env_file:
+      - .env_compose
+    environment:
+      ENV: "develop"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/health/readyz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     networks:
       - overm-network
-
-volumes:
-  postgres_data:
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    restart: unless-stopped
 
 networks:
   overm-network:
     external: true
+
+volumes:
+  postgres_data:

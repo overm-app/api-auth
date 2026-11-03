@@ -25,17 +25,15 @@ func NewUserHandler(registerUseCase *usecase.RegisterUseCase, cookieConfig Cooki
 }
 
 func (h *UserHandler) Register(c *gin.Context) {
-	requestID := c.GetString("request_id")
-
 	var req models.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, h.sugar, appErrors.Validation(appErrors.ErrValidation, err.Error()), requestID)
+		response.HandleError(c, appErrors.Validation(appErrors.ErrValidation, err.Error()))
 		return
 	}
 
 	resp, err := (*h.registerUseCase).Execute(c.Request.Context(), &req)
 	if err != nil {
-		response.HandleError(c, h.sugar, err, requestID)
+		response.HandleError(c, err)
 		return
 	}
 
