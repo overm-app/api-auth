@@ -41,7 +41,7 @@ func (h *HealthHandler) Live(c *gin.Context) {
 
 func (h *HealthHandler) Ready(c *gin.Context) {
 	if h.shuttingDown.Load() {
-		response.HandleError(c, h.sugar, appErrors.ServiceUnavailable("Service is shutting down", nil), c.GetString("request_id"))
+		response.HandleError(c, appErrors.ServiceUnavailable("Service is shutting down", nil))
 		return
 	}
 
@@ -49,7 +49,7 @@ func (h *HealthHandler) Ready(c *gin.Context) {
 	defer cancel()
 
 	if err := h.db.PingContext(ctx); err != nil {
-		response.HandleError(c, h.sugar, appErrors.ServiceUnavailable("Database connection could not be established", err), c.GetString("request_id"))
+		response.HandleError(c, appErrors.ServiceUnavailable("Database connection could not be established", err))
 		return
 	}
 
