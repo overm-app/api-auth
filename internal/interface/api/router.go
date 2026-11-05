@@ -40,7 +40,7 @@ func (r *Router) SetupRouter(logger *zap.SugaredLogger) *gin.Engine {
 	ginEngine.Use(gin.Recovery())
 
 	ginEngine.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"}, // your frontend dev URL
+		AllowOrigins:     []string{"http://localhost:3000"}, // your frontend dev URL
 		AllowMethods:     []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization", "X-Client-Type", "X-CSRF-Token"},
 		ExposeHeaders:    []string{"Content-Length", "X-Request-ID"},

@@ -50,9 +50,6 @@ func main() {
 		}
 	}
 
-	// Set server timezone
-	setupTimezone(sugar)
-
 	// Connect to database
 	dbCfg := db.Config{
 		Host:     os.Getenv("DB_HOST"),
@@ -112,7 +109,9 @@ func main() {
 func setupLogger() *zap.SugaredLogger {
 	encoderCfg := zap.NewProductionEncoderConfig()
 	encoderCfg.TimeKey = "timestamp"
-	encoderCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoderCfg.EncodeTime = func(t time.Time, enc zapcore.PrimitiveArrayEncoder) {
+		zapcore.ISO8601TimeEncoder(t.UTC(), enc)
+	}
 	encoderCfg.EncodeLevel = zapcore.CapitalLevelEncoder
 
 	logLevel := os.Getenv("LOG_LEVEL")
@@ -137,18 +136,4 @@ func setupLogger() *zap.SugaredLogger {
 	logger = logger.WithOptions(zap.WithCaller(true), zap.AddStacktrace(zapcore.FatalLevel))
 	sugar := logger.Sugar()
 	return sugar
-}
-
-func setupTimezone(sugar *zap.SugaredLogger) {
-	timezone := os.Getenv("SERVER_TIMEZONE")
-	if timezone == "" {
-		timezone = "UTC"
-	}
-	loc, err := time.LoadLocation(timezone)
-	sugar.Infow("Setting server timezone", "timezone", timezone)
-	if err != nil {
-		sugar.Errorw("Failed to set timezone", "timezone", timezone, "error", err)
-		loc = time.UTC
-	}
-	time.Local = loc
 }
