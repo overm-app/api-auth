@@ -9,14 +9,14 @@ import (
 	"github.com/overm-app/api-auth/internal/interface/api/response"
 )
 
-type authMiddleware struct {
+type JWTMiddleware struct {
 }
 
-func NewAuthMiddleware() *authMiddleware {
-	return &authMiddleware{}
+func NewAuthMiddleware() *JWTMiddleware {
+	return &JWTMiddleware{}
 }
 
-func (m *authMiddleware) JWTAuthMiddleware(jwtService ports.JWTService, sugar *zap.SugaredLogger) gin.HandlerFunc {
+func (m *JWTMiddleware) JWTAuthMiddleware(jwtService ports.JWTService, sugar *zap.SugaredLogger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var tokenString string
 
@@ -40,7 +40,7 @@ func (m *authMiddleware) JWTAuthMiddleware(jwtService ports.JWTService, sugar *z
 
 		claims, err := jwtService.ValidateToken(tokenString)
 		if err != nil {
-			response.HandleError(c, appErrors.Unauthorized(appErrors.ErrUnauthorized, "Invalid token"))
+			response.HandleError(c, err)
 			return
 		}
 

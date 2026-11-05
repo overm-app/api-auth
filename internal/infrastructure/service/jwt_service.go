@@ -1,11 +1,13 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 
+	appErrors "github.com/overm-app/api-auth/internal/domain/errors"
 	"github.com/overm-app/api-auth/internal/domain/models"
 	"github.com/overm-app/api-auth/internal/domain/ports"
 )
@@ -24,14 +26,12 @@ func NewJWTService(secret []byte, expiration time.Duration) ports.JWTService {
 
 func (j *JWTService) GenerateToken(user *models.User) (string, error) {
 	claims := &models.JWTClaims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   user.PublicID,
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.expiration)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "overm-api-auth",
-		},
-		Email: user.Email,
-		Name:  user.Name,
+		Subject:   user.PublicID, 
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.expiration)),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		Issuer:    "overm-api-auth",
+		Email:     user.Email,
+		Name:      user.Name,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -44,20 +44,23 @@ func (j *JWTService) GenerateToken(user *models.User) (string, error) {
 }
 
 func (j *JWTService) ValidateToken(tokenString string) (*models.JWTClaims, error) {
-	parsed, err := jwt.ParseWithClaims(tokenString, &models.JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+	parsed, err := jwt.ParseWithClaims(tokenString, &models.JWTClaims{}, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method")
+			return nil, appErrors.Unauthorized(appErrors.ErrUnauthorized, "Unexpected signing method")
 		}
 		return j.secret, nil
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed to parse JWT: %w", err)
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, appErrors.Unauthorized(appErrors.ErrTokenExpired, "Token has expired")
+		}
+		return nil, appErrors.Unauthorized(appErrors.ErrUnauthorized, "Invalid token: "+err.Error())
 	}
 
 	claims, ok := parsed.Claims.(*models.JWTClaims)
 	if !ok || !parsed.Valid {
-		return nil, fmt.Errorf("Invalid token claims")
+		return nil, appErrors.Unauthorized(appErrors.ErrUnauthorized, "Invalid token claims")
 	}
 
 	return claims, nil
