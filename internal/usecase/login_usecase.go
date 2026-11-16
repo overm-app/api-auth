@@ -29,7 +29,7 @@ func NewLoginUseCase(userRepo ports.UserRepository, tokenRepo ports.TokenReposit
 func (uc *LoginUseCase) Execute(ctx context.Context, req *models.LoginRequest) (*models.AuthResponse, error) {
 	user, err := uc.userRepo.FindByEmail(ctx, req.Email)
 	if err != nil {
-		return nil, appErrors.Internal("Failed to find user", err)
+		return nil, err
 	}
 
 	if user == nil {
@@ -42,16 +42,16 @@ func (uc *LoginUseCase) Execute(ctx context.Context, req *models.LoginRequest) (
 
 	accesstoken, err := uc.jwtService.GenerateToken(user)
 	if err != nil {
-		return nil, appErrors.Internal("Failed to generate token", err)
+		return nil, err
 	}
 
 	rawToken, tokenID, err := service.GenerateRefreshToken()
 	if err != nil {
-		return nil, appErrors.Internal("Failed to generate refresh token", err)
+		return nil, err
 	}
 
 	if err := uc.tokenRepo.DeleteByUserID(ctx, user.ID); err != nil {
-		return nil, appErrors.Internal("Failed to delete existing refresh token", err)
+		return nil, err
 	}
 
 	refreshToken := &models.RefreshToken{
@@ -62,7 +62,7 @@ func (uc *LoginUseCase) Execute(ctx context.Context, req *models.LoginRequest) (
 	}
 
 	if err := uc.tokenRepo.Save(ctx, refreshToken); err != nil {
-		return nil, appErrors.Internal("Failed to save refresh token", err)
+		return nil, err
 	}
 
 	return &models.AuthResponse{

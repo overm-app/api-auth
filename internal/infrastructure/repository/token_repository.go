@@ -4,11 +4,11 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
 
+	appErrors "github.com/overm-app/api-auth/internal/domain/errors"
 	"github.com/overm-app/api-auth/internal/domain/models"
 	"github.com/overm-app/api-auth/internal/domain/ports"
 )
@@ -32,12 +32,12 @@ func (r *TokenRepository) Save(ctx context.Context, token *models.RefreshToken) 
 		Values(token.ID, token.UserID, token.Token, token.ExpiresAt, time.Now()).
 		ToSql()
 	if err != nil {
-		return fmt.Errorf("Failed to build save token query: %w", err)
+		return appErrors.Internal("Failed to build token query", err)
 	}
 
 	_, err = r.db.ExecContext(ctx, query, args...)
 	if err != nil {
-		return fmt.Errorf("Failed to save refresh token: %w", err)
+		return appErrors.Internal("Failed to save token", err)
 	}
 
 	return nil
@@ -51,7 +51,7 @@ func (r *TokenRepository) GetByUserID(ctx context.Context, userID int64) (*model
 		Limit(1).
 		ToSql()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to build get token query: %w", err)
+		return nil, appErrors.Internal("Failed to build token query", err)
 	}
 
 	var token models.RefreshToken
@@ -66,7 +66,7 @@ func (r *TokenRepository) GetByUserID(ctx context.Context, userID int64) (*model
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("Failed to scan refresh token: %w", err)
+		return nil, appErrors.Internal("Failed to scan refresh token", err)
 	}
 
 	return &token, nil
@@ -80,7 +80,7 @@ func (r *TokenRepository) GetByID(ctx context.Context, id string) (*models.Refre
 		Limit(1).
 		ToSql()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to build get token by id query: %w", err)
+		return nil, appErrors.Internal("Failed to build get token by id query", err)
 	}
 
 	var token models.RefreshToken
@@ -95,7 +95,7 @@ func (r *TokenRepository) GetByID(ctx context.Context, id string) (*models.Refre
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("Failed to scan refresh token: %w", err)
+		return nil, appErrors.Internal("Failed to scan refresh token", err)
 	}
 
 	return &token, nil
@@ -107,12 +107,12 @@ func (r *TokenRepository) DeleteByUserID(ctx context.Context, userID int64) erro
 		Where(sq.Eq{"user_id": userID}).
 		ToSql()
 	if err != nil {
-		return fmt.Errorf("Failed to build delete token query: %w", err)
+		return appErrors.Internal("Failed to build delete token query", err)
 	}
 
 	_, err = r.db.ExecContext(ctx, query, args...)
 	if err != nil {
-		return fmt.Errorf("Failed to delete refresh token: %w", err)
+		return appErrors.Internal("Failed to delete refresh token", err)
 	}
 
 	return nil
@@ -121,7 +121,7 @@ func (r *TokenRepository) DeleteByUserID(ctx context.Context, userID int64) erro
 func (r *TokenRepository) RotateToken(ctx context.Context, oldID string, newToken *models.RefreshToken) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("Failed to begin transaction: %w", err)
+		return appErrors.Internal("Failed to begin transaction", err)
 	}
 	defer tx.Rollback()
 
@@ -130,12 +130,12 @@ func (r *TokenRepository) RotateToken(ctx context.Context, oldID string, newToke
 		Where(sq.Eq{"id": oldID}).
 		ToSql()
 	if err != nil {
-		return fmt.Errorf("Failed to build delete query: %w", err)
+		return appErrors.Internal("Failed to build delete query", err)
 	}
 
 	_, err = tx.ExecContext(ctx, deleteQuery, deleteArgs...)
 	if err != nil {
-		return fmt.Errorf("Failed to delete old token: %w", err)
+		return appErrors.Internal("Failed to delete old token", err)
 	}
 
 	insertQuery, insertArgs, err := r.sq.
@@ -144,16 +144,16 @@ func (r *TokenRepository) RotateToken(ctx context.Context, oldID string, newToke
 		Values(newToken.ID, newToken.UserID, newToken.Token, newToken.ExpiresAt, time.Now()).
 		ToSql()
 	if err != nil {
-		return fmt.Errorf("Failed to build insert query: %w", err)
+		return appErrors.Internal("Failed to build insert query", err)
 	}
 
 	_, err = tx.ExecContext(ctx, insertQuery, insertArgs...)
 	if err != nil {
-		return fmt.Errorf("Failed to insert new token: %w", err)
+		return appErrors.Internal("Failed to insert new token", err)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("Failed to commit token rotation: %w", err)
+		return appErrors.Internal("Failed to commit token rotation", err)
 	}
 
 	return nil

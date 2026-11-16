@@ -33,7 +33,7 @@ func NewRegisterUseCase(userRepo ports.UserRepository, tokenRepo ports.TokenRepo
 func (uc *RegisterUseCase) Execute(ctx context.Context, req *models.RegisterRequest) (*models.AuthResponse, error) {
 	existing, err := uc.userRepo.FindByEmail(ctx, req.Email)
 	if err != nil {
-		return nil, appErrors.Internal("Failed to check existing user", err)
+		return nil, err
 	}
 
 	if existing != nil {
@@ -42,7 +42,7 @@ func (uc *RegisterUseCase) Execute(ctx context.Context, req *models.RegisterRequ
 
 	hashedPassword, err := hashPassword(req.Password)
 	if err != nil {
-		return nil, appErrors.Internal("Failed to hash password", err)
+		return nil, err
 	}
 
 	user := &models.User{
@@ -53,17 +53,17 @@ func (uc *RegisterUseCase) Execute(ctx context.Context, req *models.RegisterRequ
 	}
 
 	if err := uc.userRepo.Create(ctx, user); err != nil {
-		return nil, appErrors.Internal("failed to create user", err)
+		return nil, err
 	}
 
 	accesstoken, err := uc.jwtService.GenerateToken(user)
 	if err != nil {
-		return nil, appErrors.Internal("failed to generate access token", err)
+		return nil, err
 	}
 
 	rawToken, tokenID, err := service.GenerateRefreshToken()
 	if err != nil {
-		return nil, appErrors.Internal("failed to generate refresh token", err)
+		return nil, err
 	}
 
 	refreshToken := &models.RefreshToken{
@@ -74,7 +74,7 @@ func (uc *RegisterUseCase) Execute(ctx context.Context, req *models.RegisterRequ
 	}
 
 	if err := uc.tokenRepo.Save(ctx, refreshToken); err != nil {
-		return nil, appErrors.Internal("failed to save refresh token", err)
+		return nil, err
 	}
 
 	return &models.AuthResponse{

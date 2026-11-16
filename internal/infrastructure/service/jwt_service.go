@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -37,7 +36,7 @@ func (j *JWTService) GenerateToken(user *models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signed, err := token.SignedString(j.secret)
 	if err != nil {
-		return "", fmt.Errorf("Failed to sign JWT: %w", err)
+		return "", appErrors.Internal("Failed to sign JWT", err)
 	}
 
 	return signed, nil

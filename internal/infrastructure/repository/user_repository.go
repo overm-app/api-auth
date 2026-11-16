@@ -3,12 +3,12 @@ package repository
 import (
     "context"
     "database/sql"
-    "fmt"
 
     "github.com/google/uuid"
     "github.com/Masterminds/squirrel"
     sq "github.com/Masterminds/squirrel"
 
+    appErrors "github.com/overm-app/api-auth/internal/domain/errors"
     "github.com/overm-app/api-auth/internal/domain/models"
     "github.com/overm-app/api-auth/internal/domain/ports"
 )
@@ -33,7 +33,7 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models
         Limit(1).
         ToSql()
     if err != nil {
-        return nil, fmt.Errorf("failed to build SQL query: %w", err)
+        return nil, appErrors.Internal("Failed to build SQL query", err)
     }
 
     var user models.User
@@ -52,7 +52,7 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*models
         if err == sql.ErrNoRows {
             return nil, nil
         }
-        return nil, fmt.Errorf("failed to execute SQL query: %w", err)
+        return nil, appErrors.Internal("Failed to execute SQL query", err)
     }
 
     return &user, nil
@@ -68,12 +68,18 @@ func (r *UserRepository) Create(ctx context.Context, user *models.User) error {
         Suffix("RETURNING id, created_at, updated_at").
         ToSql()
     if err != nil {
-        return fmt.Errorf("failed to build query: %w", err)
+        return appErrors.Internal("Failed to generate SQL query", err)
     }
 
-    return r.db.QueryRowContext(ctx, query, args...).Scan(
+    err = r.db.QueryRowContext(ctx, query, args...).Scan(
         &user.ID,
         &user.CreatedAt,
         &user.UpdatedAt, 
 	)
+
+    if err != nil {
+        return appErrors.Internal("Failed to scan create query", err)
+    }
+
+    return nil
 }
