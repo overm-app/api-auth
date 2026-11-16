@@ -75,24 +75,23 @@ func main() {
 
 	// Initialize services
 	jwtService := service.NewJWTService(jwtSecret, accessTokenTTL)
-	
+
 	// Initialize use cases
 	loginUseCase := usecase.NewLoginUseCase(userRepo, tokenRepo, jwtService, refreshTokenTTL)
 	registerUseCase := usecase.NewRegisterUseCase(userRepo, tokenRepo, jwtService)
 
 	cookieConfig := handlers.CookieConfig{
-		Secure: cfg.Server.Cookie.Secure,
-		Domain: cfg.Server.Cookie.Domain,
-		AccessTTL: cfg.Server.Auth.AccessTokenTTL,
+		Secure:     cfg.Server.Cookie.Secure,
+		Domain:     cfg.Server.Cookie.Domain,
+		AccessTTL:  cfg.Server.Auth.AccessTokenTTL,
 		RefreshTTL: cfg.Server.Auth.RefreshTokenTTL,
 	}
 
 	// Initialize API handlers
-	cookieManager := handlers.NewCookieManager(cookieConfig) 
-	authHandler := handlers.NewAuthHandler(loginUseCase, cookieManager, sugar,)
-	userHandler := handlers.NewUserHandler(registerUseCase, cookieManager, sugar,)
+	cookieManager := handlers.NewCookieManager(cookieConfig)
+	authHandler := handlers.NewAuthHandler(loginUseCase, cookieManager, sugar)
+	userHandler := handlers.NewUserHandler(registerUseCase, cookieManager, sugar)
 	healthHandler := handlers.NewHealthHandler(postgresDB, sugar)
-
 
 	// Setup and start server
 	r := api.NewRouter(authHandler, userHandler, healthHandler, jwtService, sugar)

@@ -18,8 +18,6 @@ type RegisterUseCase struct {
 	userRepo   ports.UserRepository
 	tokenRepo  ports.TokenRepository
 	jwtService ports.JWTService
-	
-
 }
 
 func NewRegisterUseCase(userRepo ports.UserRepository, tokenRepo ports.TokenRepository, jwtService ports.JWTService) *RegisterUseCase {

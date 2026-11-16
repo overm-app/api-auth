@@ -5,13 +5,13 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/overm-app/api-auth/internal/domain/models"
-	"github.com/overm-app/api-auth/internal/usecase"
 	"github.com/overm-app/api-auth/internal/interface/api/response"
+	"github.com/overm-app/api-auth/internal/usecase"
 )
 
 type UserHandler struct {
 	registerUseCase *usecase.RegisterUseCase
-	cookieManager  *CookieManager
+	cookieManager   *CookieManager
 	sugar           *zap.SugaredLogger
 }
 

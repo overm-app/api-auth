@@ -14,14 +14,14 @@ import (
 )
 
 type TokenRepository struct {
-	db    *sql.DB
-	sq    sq.StatementBuilderType
+	db *sql.DB
+	sq sq.StatementBuilderType
 }
 
 func NewTokenRepository(db *sql.DB) ports.TokenRepository {
 	return &TokenRepository{
-		db:    db,
-		sq:    sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
+		db: db,
+		sq: sq.StatementBuilder.PlaceholderFormat(sq.Dollar),
 	}
 }
 
