@@ -1,0 +1,18 @@
+env: develop
+server:
+  name: api-auth
+  port: 8080
+  auth:
+    access_token_ttl: 15m
+    refresh_token_ttl: 720h # 30 days
+  cookie:
+    secure: false
+    domain: ""
+log:
+  level: info
+database:
+  db_host: postgres-api-auth
+  db_port: 5432
+  db_user: overm
+  db_name: overm_auth
+  db_ssl_mode: disable

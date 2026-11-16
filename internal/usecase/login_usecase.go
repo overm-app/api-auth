@@ -13,16 +13,18 @@ import (
 )
 
 type LoginUseCase struct {
-	userRepo ports.UserRepository
-	tokenRepo ports.TokenRepository
+	userRepo   ports.UserRepository
+	tokenRepo  ports.TokenRepository
 	jwtService ports.JWTService
+	refreshTTL time.Duration
 }
 
-func NewLoginUseCase(userRepo ports.UserRepository, tokenRepo ports.TokenRepository, jwtService ports.JWTService) *LoginUseCase {
+func NewLoginUseCase(userRepo ports.UserRepository, tokenRepo ports.TokenRepository, jwtService ports.JWTService, refreshTTL time.Duration) *LoginUseCase {
 	return &LoginUseCase{
-		userRepo: userRepo,
-		tokenRepo: tokenRepo,
+		userRepo:   userRepo,
+		tokenRepo:  tokenRepo,
 		jwtService: jwtService,
+		refreshTTL: refreshTTL,
 	}
 }
 
@@ -55,10 +57,10 @@ func (uc *LoginUseCase) Execute(ctx context.Context, req *models.LoginRequest) (
 	}
 
 	refreshToken := &models.RefreshToken{
-		ID: tokenID,
-		UserID: user.ID,
-		Token: rawToken,
-		ExpiresAt: time.Now().Add(30 * 24 * time.Hour),
+		ID:        tokenID,
+		UserID:    user.ID,
+		Token:     rawToken,
+		ExpiresAt: time.Now().Add(uc.refreshTTL),
 	}
 
 	if err := uc.tokenRepo.Save(ctx, refreshToken); err != nil {
@@ -66,9 +68,9 @@ func (uc *LoginUseCase) Execute(ctx context.Context, req *models.LoginRequest) (
 	}
 
 	return &models.AuthResponse{
-		AccessToken: 	accesstoken,
-		RefreshToken: 	rawToken,
-		User: 	  		*user,
+		AccessToken:  accesstoken,
+		RefreshToken: rawToken,
+		User:         *user,
 	}, nil
 }
 

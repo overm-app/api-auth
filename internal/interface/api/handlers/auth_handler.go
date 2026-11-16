@@ -4,7 +4,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 
-	appErrors "github.com/overm-app/api-auth/internal/domain/errors"
 	"github.com/overm-app/api-auth/internal/domain/models"
 	"github.com/overm-app/api-auth/internal/usecase"
 	"github.com/overm-app/api-auth/internal/interface/api/response"
@@ -12,22 +11,21 @@ import (
 
 type AuthHandler struct {
 	loginUseCase *usecase.LoginUseCase
-	cookieConfig CookieConfig
+	cookieManager *CookieManager
 	sugar        *zap.SugaredLogger
 }
 
-func NewAuthHandler(loginUseCase *usecase.LoginUseCase, cookieConfig CookieConfig, sugar *zap.SugaredLogger) *AuthHandler {
+func NewAuthHandler(loginUseCase *usecase.LoginUseCase, cookieManager *CookieManager, sugar *zap.SugaredLogger) *AuthHandler {
 	return &AuthHandler{
 		loginUseCase: loginUseCase,
-		cookieConfig: cookieConfig,
+		cookieManager: cookieManager,
 		sugar:        sugar,
 	}
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req models.LoginRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, appErrors.Validation(appErrors.ErrValidation, err.Error()))
+	if !response.BindJSON(c, &req) {
 		return
 	}
 
@@ -39,7 +37,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 
 	clientType := c.GetHeader("X-Client-Type")
 	if clientType == "web" {
-		h.cookieConfig.setAuthCookies(c, resp)
+		h.cookieManager.SetAuth(c, resp)
 		c.JSON(200, models.WebAuthResponse{User: resp.User})
 		return
 	}

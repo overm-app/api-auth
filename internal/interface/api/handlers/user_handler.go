@@ -11,14 +11,14 @@ import (
 
 type UserHandler struct {
 	registerUseCase *usecase.RegisterUseCase
-	cookieConfig   CookieConfig
+	cookieManager  *CookieManager
 	sugar           *zap.SugaredLogger
 }
 
-func NewUserHandler(registerUseCase *usecase.RegisterUseCase, cookieConfig CookieConfig, sugar *zap.SugaredLogger) *UserHandler {
+func NewUserHandler(registerUseCase *usecase.RegisterUseCase, cookieManager *CookieManager, sugar *zap.SugaredLogger) *UserHandler {
 	return &UserHandler{
 		registerUseCase: registerUseCase,
-		cookieConfig:   cookieConfig,
+		cookieManager:   cookieManager,
 		sugar:           sugar,
 	}
 }
@@ -37,7 +37,7 @@ func (h *UserHandler) Register(c *gin.Context) {
 
 	clientType := c.GetHeader("X-Client-Type")
 	if clientType == "web" {
-		h.cookieConfig.setAuthCookies(c, resp)
+		h.cookieManager.SetAuth(c, resp)
 		c.JSON(200, models.WebAuthResponse{User: resp.User})
 		return
 	}

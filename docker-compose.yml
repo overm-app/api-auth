@@ -1,6 +1,6 @@
 services:
-  postgres:
-    container_name: postgresDB
+  postgres-api-auth:
+    container_name: postgres-api-auth
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -20,31 +20,34 @@ services:
     restart: unless-stopped
 
   api-auth:
+    image: api-auth:dev
     build:
       context: .
       dockerfile: Dockerfile
-      privileged: false
-    container_name: api-auth
+    container_name: api-auth-dev
     depends_on:
-      - postgres
+      postgres-api-auth:
+        condition: service_healthy
     env_file:
-      - .env_compose
-    environment:
-      ENV: "develop"
+      - .env
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8081/health/readyz"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health/readyz"]
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 10s
     networks:
-      - overm-network
+      overm-network:
+        aliases: [api-auth-svc]
     ports:
-      - "${SERVER_PORT}:${SERVER_PORT}"
+      - "${API_AUTH_HOST:-8081}:8080"
     restart: unless-stopped
+    volumes:
+      - ./config/config.yaml:/etc/config/config.yaml:ro
+
+volumes:
+  postgres_data:
 
 networks:
   overm-network:
     external: true
-
-volumes:
-  postgres_data:
