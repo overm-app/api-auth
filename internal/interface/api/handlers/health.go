@@ -18,14 +18,14 @@ type Pinger interface {
 }
 
 type HealthHandler struct {
-	db Pinger
-	sugar *zap.SugaredLogger
+	db           Pinger
+	sugar        *zap.SugaredLogger
 	shuttingDown atomic.Bool
 }
 
 func NewHealthHandler(db Pinger, sugar *zap.SugaredLogger) *HealthHandler {
 	return &HealthHandler{
-		db: db,
+		db:    db,
 		sugar: sugar,
 	}
 }

@@ -9,9 +9,9 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 
+	appErrors "github.com/overm-app/api-auth/internal/domain/errors"
 	"github.com/overm-app/api-auth/internal/domain/ports"
 	"github.com/overm-app/api-auth/internal/interface/api/handlers"
-	appErrors "github.com/overm-app/api-auth/internal/domain/errors"
 )
 
 type Router struct {

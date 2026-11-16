@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -13,21 +12,21 @@ import (
 )
 
 type JWTService struct {
-	secret     []byte
-	expiration time.Duration
+	secret         []byte
+	accessTokenTTL time.Duration
 }
 
-func NewJWTService(secret []byte, expiration time.Duration) ports.JWTService {
+func NewJWTService(secret []byte, accessTokenTTL time.Duration) ports.JWTService {
 	return &JWTService{
-		secret:     secret,
-		expiration: expiration,
+		secret:         secret,
+		accessTokenTTL: accessTokenTTL,
 	}
 }
 
 func (j *JWTService) GenerateToken(user *models.User) (string, error) {
 	claims := &models.JWTClaims{
-		Subject:   user.PublicID, 
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.expiration)),
+		Subject:   user.PublicID,
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.accessTokenTTL)),
 		IssuedAt:  jwt.NewNumericDate(time.Now()),
 		Issuer:    "overm-api-auth",
 		Email:     user.Email,
@@ -37,7 +36,7 @@ func (j *JWTService) GenerateToken(user *models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signed, err := token.SignedString(j.secret)
 	if err != nil {
-		return "", fmt.Errorf("Failed to sign JWT: %w", err)
+		return "", appErrors.Internal("Failed to sign JWT", err)
 	}
 
 	return signed, nil

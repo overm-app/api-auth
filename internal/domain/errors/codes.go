@@ -13,6 +13,7 @@ const (
 	ErrOAuthCodeInvalid     ErrorCode = "OAUTH_CODE_INVALID"
 
 	// Resource
+	ErrBadRequest         ErrorCode = "BAD_REQUEST"
 	ErrNotFound           ErrorCode = "NOT_FOUND"
 	ErrAlreadyExists      ErrorCode = "ALREADY_EXISTS"
 	ErrEmailAlreadyExists ErrorCode = "EMAIL_ALREADY_EXISTS"
@@ -26,4 +27,5 @@ const (
 	// Internal
 	ErrInternal    ErrorCode = "INTERNAL_ERROR"
 	ERRUnavailable ErrorCode = "SERVICE_UNAVAILABLE"
+	ErrUnavailable ErrorCode = "SERVICE_UNAVAILABLE"
 )

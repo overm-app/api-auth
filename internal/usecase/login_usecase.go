@@ -13,23 +13,25 @@ import (
 )
 
 type LoginUseCase struct {
-	userRepo ports.UserRepository
-	tokenRepo ports.TokenRepository
+	userRepo   ports.UserRepository
+	tokenRepo  ports.TokenRepository
 	jwtService ports.JWTService
+	refreshTTL time.Duration
 }
 
-func NewLoginUseCase(userRepo ports.UserRepository, tokenRepo ports.TokenRepository, jwtService ports.JWTService) *LoginUseCase {
+func NewLoginUseCase(userRepo ports.UserRepository, tokenRepo ports.TokenRepository, jwtService ports.JWTService, refreshTTL time.Duration) *LoginUseCase {
 	return &LoginUseCase{
-		userRepo: userRepo,
-		tokenRepo: tokenRepo,
+		userRepo:   userRepo,
+		tokenRepo:  tokenRepo,
 		jwtService: jwtService,
+		refreshTTL: refreshTTL,
 	}
 }
 
 func (uc *LoginUseCase) Execute(ctx context.Context, req *models.LoginRequest) (*models.AuthResponse, error) {
 	user, err := uc.userRepo.FindByEmail(ctx, req.Email)
 	if err != nil {
-		return nil, appErrors.Internal("Failed to find user", err)
+		return nil, err
 	}
 
 	if user == nil {
@@ -42,33 +44,33 @@ func (uc *LoginUseCase) Execute(ctx context.Context, req *models.LoginRequest) (
 
 	accesstoken, err := uc.jwtService.GenerateToken(user)
 	if err != nil {
-		return nil, appErrors.Internal("Failed to generate token", err)
+		return nil, err
 	}
 
 	rawToken, tokenID, err := service.GenerateRefreshToken()
 	if err != nil {
-		return nil, appErrors.Internal("Failed to generate refresh token", err)
+		return nil, err
 	}
 
 	if err := uc.tokenRepo.DeleteByUserID(ctx, user.ID); err != nil {
-		return nil, appErrors.Internal("Failed to delete existing refresh token", err)
+		return nil, err
 	}
 
 	refreshToken := &models.RefreshToken{
-		ID: tokenID,
-		UserID: user.ID,
-		Token: rawToken,
-		ExpiresAt: time.Now().Add(30 * 24 * time.Hour),
+		ID:        tokenID,
+		UserID:    user.ID,
+		Token:     rawToken,
+		ExpiresAt: time.Now().Add(uc.refreshTTL),
 	}
 
 	if err := uc.tokenRepo.Save(ctx, refreshToken); err != nil {
-		return nil, appErrors.Internal("Failed to save refresh token", err)
+		return nil, err
 	}
 
 	return &models.AuthResponse{
-		AccessToken: 	accesstoken,
-		RefreshToken: 	rawToken,
-		User: 	  		*user,
+		AccessToken:  accesstoken,
+		RefreshToken: rawToken,
+		User:         *user,
 	}, nil
 }
 
